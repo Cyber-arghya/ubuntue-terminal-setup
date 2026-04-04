@@ -498,4 +498,3 @@ install_git_suite
 setup_ssh_key
 install_gh_cli
 show_summary
-
