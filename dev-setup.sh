@@ -411,22 +411,6 @@ gup() {
 }
 
 
-
-
-gacp() {
-  if [ -z "$1" ]; then
-    echo "Error: Please provide a commit message."
-    echo "Usage: gacp 'your commit message'"
-    return 1
-  fi
-
-  git add .
-  git commit -m "$1"
-  git push
-}
-
-
-
 EOF
     log "Aliases and newrepof updated in $ALIAS_FILE."
 }
