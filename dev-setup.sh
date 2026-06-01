@@ -458,11 +458,20 @@ function install_gh_cli() {
     # ONLY login if not already authenticated
     if ! gh auth status &> /dev/null; then
         log "Not logged into GitHub. Starting login..."
-        gh auth login
+       gh auth login --scopes "write:packages,read:packages"
     else
         log "Already authenticated with GitHub CLI. Skipping login."
         gh auth status
     fi
+
+    # Safety check: Docker install thakle tobei GHCR login korbe
+    if command -v docker &> /dev/null; then
+        log "Authenticating Docker with GHCR..."
+        gh auth token | docker login ghcr.io -u $(gh api user -q ".login") --password-stdin
+    else
+        log "Docker is not installed or running. Skipping GHCR login."
+    fi
+
 }
 
 
