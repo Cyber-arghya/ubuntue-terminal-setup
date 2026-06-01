@@ -8,6 +8,7 @@ SSH_KEY_PATH="$HOME/.ssh/id_ed25519"
 
 # Colors for output
 GREEN='\033[0;32m'
+BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
@@ -300,33 +301,63 @@ alias open='explorer.exe .'
 alias wslshutdown='wsl.exe --shutdown'
 
 
+
+
+
+
+
+
+
+
+
+run() {
+    local f="$1"
+    [ -z "$f" ] && { echo -e "${RED}Usage: run <filename>${NC}"; return 1; }
+    [ ! -f "$f" ] && { echo -e "${RED}Error: File '$f' not found!${NC}"; return 1; }
+
+    local ext="${f##*.}"
+    local base="${f%.*}"
+    
+    echo -e "${BLUE}[Analysis] Compiling/Executing $ext file: $f...${NC}"
+
+    case "$ext" in
+        c)   gcc -Wall -Wextra -pthread "$f" -o "$base.out" && ./"$base.out" ;;
+        cpp) g++ -Wall -Wextra -pthread -std=c++23 "$f" -o "$base.out" && ./"$base.out" ;;
+        py)  python3 "$f" ;;
+        js)  node "$f" ;;
+        sh)  [ ! -x "$f" ] && chmod +x "$f"; ./"$f" ;;
+        *)   echo -e "${RED}Unsupported extension: .$ext${NC}"; return 1 ;;
+    esac
+}
+
+
+
+
 # Usage: newrepof my-project-name
 function newrepof() {
-    # 1. Check if a name was provided
-    if [ -z "$1" ]; then
-        echo "Error: Please provide a name for your project."
+  if [ -z "$1" ]; then
+        echo -e "${RED}Error: Please provide a project name.${NC}"
+        return 1
+    fi
+    
+    if [ -d "$1" ]; then
+        echo -e "${RED}Error: Directory '$1' already exists. Choose a different name.${NC}"
         return 1
     fi
 
-    # 2. Create the folder and go inside
-    mkdir -p "$1"
-    cd "$1" || return
-
-    # 3. Create a README and Setup Git
+    echo -e "${BLUE}[Analysis] Initializing environment for '$1'...${NC}"
+    mkdir -p "$1" && cd "$1" || return
     echo "# $1" > README.md
-    git init
-    git add .
-    git commit -m "Initial commit"
-
-    # 4. Create the repo on GitHub and Push
-    # Ensure gh is authenticated before running this
+    
+    git init && git add . && git commit -m "Initial commit"
+    
     if command -v gh &> /dev/null; then
          gh repo create "$1" --public --push --source=.
-         echo "------------------------------------------------"
-         echo "Done! Project '$1' is live on GitHub."
+         echo -e "${GREEN}✅ Success: '$1' is live on GitHub.${NC}"
     else
-         echo "Warning: GitHub CLI (gh) not found. Skipping repo creation."
+         echo -e "${RED}Warning: GitHub CLI (gh) not found. Repo not pushed.${NC}"
     fi
+
     
     # 5. Open VS Code in this folder
     if command -v code &> /dev/null; then
@@ -334,52 +365,6 @@ function newrepof() {
         code .
     fi
 }
-
-
-
-
-
-
-
-
-
-# Universal Run: Checks permission once, then runs forever.
-function run() {
-    local f="$1"
-    
-    # 1. Validation
-    [ -z "$f" ] && { echo "Usage: run <filename>"; return 1; }
-    [ ! -f "$f" ] && { echo -e "${RED}File not found!${NC}"; return 1; }
-
-    local ext="${f##*.}"
-    local base="${f%.*}"
-
-    # 2. Smart Logic based on file type
-    case "$ext" in
-        c)   
-            # C needs compiling, output gets permission automatically by GCC
-            gcc -Wall -Wextra -pthread "$f" -o "$base.out" && ./"$base.out" 
-            ;;
-        
-        cpp) 
-            # C++ needs compiling (C++23)
-            g++ -Wall -Wextra -pthread -std=c++23 "$f" -o "$base.out" && ./"$base.out" 
-            ;;
-        
-        py)  python3 "$f" ;;
-        
-        js)  node "$f" ;;
-        
-        sh)  
-            # Check if executable? If NOT, apply chmod (One time only)
-            [ ! -x "$f" ] && chmod +x "$f"
-            ./"$f" 
-            ;;
-            
-        *)   echo -e "${RED}Unsupported: .$ext${NC}"; return 1 ;;
-    esac
-}
-
 
 
 #publish all file to git repo with folder name 
@@ -409,6 +394,21 @@ gup() {
         echo "⚠️ No changes to commit."
     fi
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 EOF
