@@ -28,8 +28,9 @@ function install_build_tools() {
 }
 
 function install_python_env() {
-    log "Installing Python environment..."
-    sudo apt install -y python3 python3-pip python3-venv
+    log "Installing uv (Python manager)..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    source $HOME/.cargo/env
 }
 
 function install_git_suite() {
