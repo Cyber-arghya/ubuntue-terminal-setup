@@ -29,6 +29,7 @@ function install_build_tools() {
 
 function install_python_env() {
     log "Installing uv (Python manager)..."
+    sudo apt-get update && sudo apt-get install -y zstd
     curl -LsSf https://astral.sh/uv/install.sh | sh
     source $HOME/.cargo/env
 }
