@@ -513,7 +513,8 @@ function show_summary() {
     
     # Check versions for specific dev tools
     echo -e "Git:      $(git --version | awk '{print $3}')"
-    echo -e "Python:   $(python3 --version | awk '{print $2}')"
+    echo -e "Rust:     $(rustc --version 2>/dev/null | awk '{print $2}')"
+    echo -e "uv:       $(uv --version 2>/dev/null | awk '{print $2}')"
     
     # Load NVM to check Node if it was just installed
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
@@ -528,13 +529,19 @@ function show_summary() {
 # --- Execution ---   chmod +x dev-setup.sh 
 #                     ./dev-setup.sh source 
 #                     ~/.bashrc 
-setup_nopasswd_sudo
+# setup_nopasswd_sudo
+
 setup_shell_utils
+
 install_basics
+
 install_build_tools
+
 install_rust_and_python_env
 install_node_nvm
+
 install_git_suite
 setup_ssh_key
 install_gh_cli
+
 show_summary
