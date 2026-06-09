@@ -19,7 +19,7 @@ log() {
 function install_basics() {
     log "Updating apt and installing basic tools..."
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y curl wget zip unzip coreutils build-essential jq
+    sudo apt install -y curl wget zip unzip coreutils jq build-essential  cmake gdb
 }
 
 
