@@ -63,6 +63,32 @@ function install_rust_and_python_env() {
     fi
 }
 
+
+function setup_default_python() {
+    log "Setting up default Python version using uv..."
+
+    # Check if uv is available
+    if command -v uv >/dev/null 2>&1 || [ -f "$HOME/.local/bin/uv" ]; then
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Install Python 3.12 (or any preferred version)
+        log "Installing Python 3.12..."
+        if uv python install 3.12; then
+            log "Python 3.12 installed successfully."
+            
+            # Set 3.12 as the global default for uv
+            uv python pin 3.12
+            log "Python 3.12 pinned as default."
+        else
+            log "ERROR: Failed to install Python via uv. Continuing..."
+        fi
+    else
+        log "ERROR: uv is not installed. Skipping Python setup."
+    fi
+}
+
+
+
 function install_git_suite() {
     log "Installing and configuring Git..."
     sudo apt install -y git
@@ -515,6 +541,7 @@ function show_summary() {
     echo -e "Git:      $(git --version | awk '{print $3}')"
     echo -e "Rust:     $(rustc --version 2>/dev/null | awk '{print $2}')"
     echo -e "uv:       $(uv --version 2>/dev/null | awk '{print $2}')"
+    echo -e "Python:   $(uv run python --version 2>/dev/null | awk '{print $2}')"
     
     # Load NVM to check Node if it was just installed
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
@@ -531,17 +558,15 @@ function show_summary() {
 #                     ~/.bashrc 
 # setup_nopasswd_sudo
 
-setup_shell_utils
+# setup_shell_utils
+# install_basics
+# install_build_tools
+# install_rust_and_python_env
+# setup_default_python
+# install_node_nvm
+# install_git_suite
+# setup_ssh_key
 
-install_basics
-
-install_build_tools
-
-install_rust_and_python_env
-install_node_nvm
-
-install_git_suite
-setup_ssh_key
-install_gh_cli
+# install_gh_cli
 
 show_summary
