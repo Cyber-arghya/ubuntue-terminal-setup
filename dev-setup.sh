@@ -27,11 +27,40 @@ function install_build_tools() {
     sudo apt install -y build-essential
 }
 
-function install_python_env() {
-    log "Installing uv (Python manager)..."
-    sudo apt-get update && sudo apt-get install -y zstd
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    source $HOME/.cargo/env
+function install_rust_and_python_env() {
+    log "Checking Rust and uv installations..."
+
+    # 1. Check if Rust (Cargo) is already installed
+    if command -v cargo >/dev/null 2>&1; then
+        log "Rust is already installed. Skipping Rust installation."
+    else
+        log "Installing Rust (Non-interactive mode)..."
+        # Try to install Rust. If it fails, print an error but do NOT exit.
+        if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; then
+            log "Rust installed successfully."
+        else
+            log "ERROR: Failed to install Rust. Continuing with the rest of the setup..."
+        fi
+    fi
+
+    # Source the Cargo environment if the file exists
+    if [ -f "$HOME/.cargo/env" ]; then
+        source "$HOME/.cargo/env"
+    fi
+
+    # 2. Check if uv is already installed
+    if command -v uv >/dev/null 2>&1 || [ -f "$HOME/.local/bin/uv" ]; then
+        log "uv is already installed. Skipping uv installation."
+    else
+        log "Installing uv (Python manager)..."
+        # Try to install dependencies and uv. If it fails, print an error but do NOT exit.
+        if sudo apt-get update && sudo apt-get install -y zstd && curl -LsSf https://astral.sh/uv/install.sh | sh; then
+            log "uv installed successfully."
+            export PATH="$HOME/.local/bin:$PATH"
+        else
+            log "ERROR: Failed to install uv. Continuing with the rest of the setup..."
+        fi
+    fi
 }
 
 function install_git_suite() {
@@ -499,13 +528,13 @@ function show_summary() {
 # --- Execution ---   chmod +x dev-setup.sh 
 #                     ./dev-setup.sh source 
 #                     ~/.bashrc 
-setup_nopasswd_sudo
-setup_shell_utils
-install_basics
-install_build_tools
-install_python_env
-install_node_nvm
-install_git_suite
-setup_ssh_key
-install_gh_cli
+# setup_nopasswd_sudo
+# setup_shell_utils
+# install_basics
+# install_build_tools
+install_rust_and_python_env
+# install_node_nvm
+# install_git_suite
+# setup_ssh_key
+# install_gh_cli
 show_summary
