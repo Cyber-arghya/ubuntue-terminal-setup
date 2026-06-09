@@ -97,7 +97,6 @@ function install_git_suite() {
         sudo apt install -y git
     fi
 
-
     log "Configuring Git for $USER_NAME <$USER_EMAIL>..."
 
 
@@ -239,6 +238,8 @@ bin/
 .env
 .env.*
 !.env.example
+.python-version
+
 EOL
     git config --global core.excludesfile "$GITIGNORE_FILE"
 }
@@ -374,12 +375,6 @@ alias wslshutdown='wsl.exe --shutdown'
 
 
 
-
-
-
-
-
-
 run() {
     local f="$1"
     [ -z "$f" ] && { echo -e "${RED}Usage: run <filename>${NC}"; return 1; }
@@ -403,8 +398,10 @@ run() {
 
 
 
+
+
 # Usage: newrepof my-project-name
-function newrepof() {
+function newrepo() {
   if [ -z "$1" ]; then
         echo -e "${RED}Error: Please provide a project name.${NC}"
         return 1
@@ -435,6 +432,59 @@ function newrepof() {
         code .
     fi
 }
+
+
+
+
+
+
+delrepo() {
+    # Check if inside a git repository
+    if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        echo "Error: Not inside a Git repository."
+        return 1
+    fi
+
+    # Fetch repo details using gh cli
+    local repo_name=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+    local local_path=$(pwd)
+
+    if [ -z "$repo_name" ]; then
+        echo "Error: Failed to fetch remote repository info. Make sure remote is set and gh is authenticated."
+        return 1
+    fi
+
+    echo "Target Remote Repository: $repo_name"
+    echo "Target Local Directory: $local_path"
+    echo "-------------------------------------"
+
+    # Ask for user confirmation
+    read -p "Remote repository delete korte chao? (y/n): " del_remote
+    read -p "Local folder delete korte chao? (y/n): " del_local
+
+    # Handle Remote Deletion
+    if [[ "$del_remote" =~ ^[Yy]$ ]]; then
+        echo "Deleting remote repository..."
+        gh repo delete "$repo_name" --yes
+        echo "✅ Remote repository successfully deleted."
+    else
+        echo "⏭️ Skipped remote repository deletion."
+    fi
+
+    # Handle Local Deletion
+    if [[ "$del_local" =~ ^[Yy]$ ]]; then
+        echo "Deleting local folder..."
+        cd .. # Move out of the directory to safely delete it
+        rm -rf "$local_path"
+        echo "✅ Local folder successfully deleted."
+    else
+        echo "⏭️ Skipped local folder deletion."
+    fi
+}
+
+
+
+
 
 
 #publish all file to git repo with folder name 
@@ -468,15 +518,48 @@ gup() {
 
 
 
+dpub() {
+    # 1. Get app name: Use argument 1, or default to current directory name (lowercase)
+    local app_name="${1:-$(basename "$PWD" | tr '[:upper:]' '[:lower:]')}"
+    local tag="${2:-latest}"
+    
+    # Check if Dockerfile exists in the current directory
+    if [ ! -f "Dockerfile" ]; then
+        echo -e "\033[0;31m❌ Error: No Dockerfile found in the current directory.\033[0m"
+        return 1
+    fi
 
+    # Ensure GitHub CLI is available
+    if ! command -v gh &> /dev/null; then
+        echo -e "\033[0;31m❌ Error: GitHub CLI (gh) is not installed.\033[0m"
+        return 1
+    fi
 
+    echo -e "\033[0;34m🔍 Fetching GitHub username...\033[0m"
+    local gh_user
+    gh_user=$(gh api user -q ".login" | tr '[:upper:]' '[:lower:]')
+    local full_image="ghcr.io/$gh_user/$app_name:$tag"
 
+    echo -e "\033[0;34m🐳 Building Docker image: $app_name...\033[0m"
+    # Execute docker build
+    if ! docker build -t "$app_name" .; then
+        echo -e "\033[0;31m❌ Error: Docker build failed.\033[0m"
+        return 1
+    fi
 
+    echo -e "\033[0;34m🏷️ Tagging image...\033[0m"
+    # Execute docker tag
+    docker tag "$app_name" "$full_image"
 
-
-
-
-
+    echo -e "\033[0;34m🚀 Pushing to GHCR: $full_image...\033[0m"
+    # Execute docker push
+    if docker push "$full_image"; then
+        echo -e "\033[0;32m✅ Success: Image successfully published to $full_image\033[0m"
+    else
+        echo -e "\033[0;31m❌ Error: Docker push failed. Are you authenticated with GHCR?\033[0m"
+        return 1
+    fi
+}
 
 
 
@@ -594,14 +677,14 @@ function show_summary() {
 
 
 # setup_nopasswd_sudo
-# setup_shell_utils
+setup_shell_utils
 # install_basics
 
 # install_rust_and_python_env
 # setup_default_python
 # install_node_nvm
 
-# install_git_suite
+install_git_suite
 # setup_ssh_key
 # install_gh_cli
 
