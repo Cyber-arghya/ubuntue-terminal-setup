@@ -100,7 +100,7 @@ alias dps='docker ps'
 alias dlogs='docker logs -f'
 
 # Quick IP lookup (private)
-alias mylocalip="hostname -I | awk '{print \$1}'"
+alias ip="hostname -I | awk '{print \$1}'"
 ```
 
 5. Improved Project Initialization (newrepof)

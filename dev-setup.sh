@@ -19,13 +19,9 @@ log() {
 function install_basics() {
     log "Updating apt and installing basic tools..."
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y curl wget zip unzip coreutils
+    sudo apt install -y curl wget zip unzip coreutils build-essential jq
 }
 
-function install_build_tools() {
-    log "Installing Build Essentials (C/C++)..."
-    sudo apt install -y build-essential
-}
 
 function install_rust_and_python_env() {
     log "Checking Rust and uv installations..."
@@ -90,8 +86,20 @@ function setup_default_python() {
 
 
 function install_git_suite() {
-    log "Installing and configuring Git..."
-    sudo apt install -y git
+   log "Checking Git installation..."
+
+    # 1. Check if git is already installed
+    if command -v git >/dev/null 2>&1; then
+        log "Git is already installed. Skipping installation."
+    else
+        log "Git not found. Installing..."
+        sudo apt update
+        sudo apt install -y git
+    fi
+
+
+    log "Configuring Git for $USER_NAME <$USER_EMAIL>..."
+
 
     # Configuration
     git config --global user.name "$USER_NAME"
@@ -112,7 +120,12 @@ function install_git_suite() {
     git config --global alias.ignored "!git status --ignored -s | grep '!!'"
     git config --global alias.why "check-ignore -v"
 
+
+
     # Global Gitignore
+    log "Creating global .gitignore..."
+
+
     local GITIGNORE_FILE="$HOME/.gitignore_global"
     cat <<'EOL' > "$GITIGNORE_FILE"
 # =========================
@@ -521,9 +534,31 @@ function install_gh_cli() {
         gh auth status
     fi
 
-    # Safety check: Docker install thakle tobei GHCR login korbe
+   # Safety check: Docker install thakle tobei GHCR login korbe
     if command -v docker &> /dev/null; then
         log "Authenticating Docker with GHCR..."
+        
+        # FIX: Remove Windows credsStore from WSL Docker config to prevent 'exec format error'
+        local DOCKER_CONFIG="$HOME/.docker/config.json"
+
+        if [ -f "$DOCKER_CONFIG" ]; then
+            log "Patching Docker config for WSL compatibility..."
+            sed -i '/"credsStore": "desktop.exe"/d' "$DOCKER_CONFIG"
+            sed -i '/"credsStore": "desktop"/d' "$DOCKER_CONFIG"
+        fi
+
+        # if [ -f "$DOCKER_CONFIG" ]; then
+        #     log "Patching Docker config for WSL compatibility..."
+            
+        #     # Check if jq is installed, if not install it
+        #     if ! command -v jq &> /dev/null; then
+        #         sudo apt install -y jq
+        #     fi
+
+        #     # Safely remove the credsStore key without breaking JSON syntax
+        #     jq 'del(.credsStore)' "$DOCKER_CONFIG" > "${DOCKER_CONFIG}.tmp" && mv "${DOCKER_CONFIG}.tmp" "$DOCKER_CONFIG"
+        # fi
+
         gh auth token | docker login ghcr.io -u $(gh api user -q ".login") --password-stdin
     else
         log "Docker is not installed or running. Skipping GHCR login."
@@ -556,17 +591,18 @@ function show_summary() {
 # --- Execution ---   chmod +x dev-setup.sh 
 #                     ./dev-setup.sh source 
 #                     ~/.bashrc 
-# setup_nopasswd_sudo
 
+
+# setup_nopasswd_sudo
 # setup_shell_utils
 # install_basics
-# install_build_tools
+
 # install_rust_and_python_env
 # setup_default_python
 # install_node_nvm
+
 # install_git_suite
 # setup_ssh_key
-
 # install_gh_cli
 
 show_summary
