@@ -528,13 +528,13 @@ function show_summary() {
 # --- Execution ---   chmod +x dev-setup.sh 
 #                     ./dev-setup.sh source 
 #                     ~/.bashrc 
-# setup_nopasswd_sudo
-# setup_shell_utils
-# install_basics
-# install_build_tools
+setup_nopasswd_sudo
+setup_shell_utils
+install_basics
+install_build_tools
 install_rust_and_python_env
-# install_node_nvm
-# install_git_suite
-# setup_ssh_key
-# install_gh_cli
+install_node_nvm
+install_git_suite
+setup_ssh_key
+install_gh_cli
 show_summary
